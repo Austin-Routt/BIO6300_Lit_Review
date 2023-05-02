@@ -1,0 +1,435 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{svg}
+\usepackage[version=4]{mhchem}
+\usepackage[pdf]{graphviz}
+\usepackage{nicematrix}
+\NiceMatrixOptions{
+code-for-first-row = \color{black} ,
+code-for-last-row = \color{black} ,
+code-for-first-col = \color{black} ,
+code-for-last-col = \color{black}
+}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\begin{document}
+
+\title{Dynamic ODEs for in Silico RBCs
+}
+\author{\IEEEauthorblockN{ Austin Harper Routt}
+\IEEEauthorblockA{\textit{Department of Biomedical Engineering} \\
+\textit{University of Houston}\\
+Houston, Texas \\
+https://orcid.org/0000-0002-7286-2924}
+}
+
+\maketitle
+
+\begin{abstract}
+This paper comprehensively reviews ordinary differential equations (ODEs) in constructing reaction network-based biological models, focusing on red blood cells (RBCs). It provides an overview of essential concepts in systems biology, including reaction networks, stoichiometric matrices, gene regulatory networks, metabolic networks, and cell signaling networks, before discussing the current state of knowledge in the field. The review highlights the limitations of current models, the potential for improvement, and opportunities for future research. Overall, this review aims to provide readers with a thorough yet accessible understanding of ODE-based modeling approaches in RBCs and their significance for advancing our understanding of complex biological systems.
+\end{abstract}
+
+\begin{IEEEkeywords}
+erythrocyte, ordinary differential equations, reaction networks, red blood cells, systems biology
+\end{IEEEkeywords}
+
+\section{Introduction}
+Mathematical models have become essential tools in modern biomedical engineering, even in transfusion medicine, enabling researchers to gain insights into the complex behavior of biological systems\cite{b1, b2}. This paper provides a comprehensive review of ordinary differential equations (ODEs) in constructing biological models, with a particular focus on red blood cells (RBCs). While assuming a basic understanding of biology, this review aims to provide a survey in the concepts of systems biology, reaction networks, stoichiometric matrices, gene regulatory networks, metabolic networks, cell signaling networks, and the history of modeling erythrocytes. By doing so, it provides readers with an accessible yet thorough understanding of these critical concepts. Following a review of the basics, the methodology section describes the approach used in this review, while the discussion section covers the current requirements, limitations, progress, patterns, and gaps in knowledge. Finally, the conclusion summarizes the key points and underscores the importance of this review for future research in modeling erythrocytes.
+
+\section{Background}
+Progress in systems biology and 'omics' technologies have expanded the central dogma of molecular biology from a linear process of DNA transcription into mRNA, and subsequent protein translation, to complex networks that function as biological circuits\cite{b3}. Computational methods are required to understand these networks and the cells they control. 
+
+The classic systems biology approach is to systematize these into reaction networks via a system of ordinary differential equations (ODEs). Despite the molecular species involved, each equation follows a general format:
+\begin{equation}
+\frac{d\lbrack Species\rbrack}{dt} = \ \sum_{}^{}{Rates}_{inflows} - \sum_{}^{}{Rates}_{outflows}\label{eq1}
+\end{equation}
+
+This is to say that the change in a particular molecular species over time equals the sum of the inflow (production) rates for that species minus the outflow (loss) rates. Whether studying a regulatory, metabolic, or signaling network, biomedical engineers can use this general formula, along with biologically relevant information, to determine the change of each chemical species and the homeostatic state of the overall system. Moreover, one can unify these networks within a stoichiometric matrix to gain a holistic perspective.
+\begin{equation}
+\mathbf{C} = \frac{dC_{i}}{dt} = \sum_{j = 1}^{r}{s_{ij}v_{j} = \mathbf{Sv}},\ i = 1,\ \ldots,m\label{eq2}
+\end{equation}
+
+In the stoichiometric matrix, \begin{math}\mathbf{S}\end{math}, the columns represent the reactions, and the rows represent the molecular substances. The change in the concentration of molecular substance \begin{math}i\end{math} is denoted by \begin{math}C_{i}\end{math}, while \begin{math}v_{j}\end{math} represents the rate of reaction \begin{math}j\end{math}. The stoichiometric matrix contains \begin{math}m\end{math} rows and \begin{math}r\end{math} columns, corresponding to the total number of substances and reactions, respectively. The stoichiometric coefficient of substance \begin{math}i\end{math} in reaction \begin{math}j\end{math} is denoted by \begin{math}s_{ij}\end{math}.
+
+In most biological cases, analytical solutions do not exist for these ODEs, so numerical techniques are typically required\cite{b4, b5}. Of these numerical methods, variations of Runge–Kutta are commonly used due to their balance between efficiency and accuracy, as well as their availability on many computational platforms, such as MATLAB, Python, and Java\cite{b4, b6, b7, b8, b9}.
+
+\subsection{Regulatory Networks}
+
+Regulatory networks are complex systems of molecular circuits involving various molecular species, particularly genes and proteins (transcription factors), which interact to regulate critical biological processes. These networks play a crucial role in controlling the transcription of DNA to mRNA and the subsequent translation of mRNA into protein\cite{b10}.
+
+Mature human erythrocytes do not have a nucleus, organelles, or ribosomes, but they do begin their lives with them as hematopoietic stem cells in the bone marrow\cite{b11}. Through erythropoiesis, these stem cells transform into mature RBCs with the help of regulatory networks. Therefore, the proteins found in RBCs come from the genes of these stem cells, and any genetic variations (like single nucleotide polymorphisms) can affect how their reaction networks function\cite{b12, b13, b14}. That is why it is essential to model these networks to better understand any problems that arise in erythropoiesis and RBC metabolism.
+
+Fig.~\ref{fig1} depicts a central dogma diagram with a protein that inhibits gene expression.
+\begin{figure}[htbp]
+  \raggedleft
+ \digraph[scale=0.4]{centraldogma}{
+    layout="circo";
+    splines="spline";
+    
+    node [shape = doublecircle]; Gene;
+    node [shape = circle];
+    mindist = 1.7;
+    root = Protein_Loss;
+    
+    mRNA_Loss  [style = "dashed", label="mRNA\noexpand\nLoss"]
+    Protein_Loss  [style = "dashed", label="Protein\noexpand\nLoss"]
+    
+    Gene -> mRNA [ headlabel= "Transcription"];
+    mRNA -> mRNA_Loss [ label = "Decay\noexpand\nDilution"];
+    mRNA -> Protein [ label = "Translation"];
+    Protein -> Protein_Loss [label = "Dilution\noexpand\n", headlabel = "\noexpand\n  Decay\noexpand\n"];
+    Protein -> Gene [ arrowhead="tee", label = "Repression"];
+}
+  \caption{The diagram shows the central dogma of molecular biology, demonstrating mRNA and protein loss, while highlighting the possible inhibitory function of a protein acting as a repressor. Note that not all proteins act as repressors.}
+  \label{fig1}
+\end{figure}
+
+Using the general form, we can convert this graph into a system of ODEs. Let us denote the rates of transcription, mRNA decay, mRNA dilution, translation, protein decay, and protein dilution by the symbols $\gamma$, $\rho$, $\pi$, $\phi$, $\psi$, and $\mu$, respectively.
+\begin{equation}
+\frac{d\lbrack mRNA\rbrack}{dt} = \ Rate_{\gamma} - Rate_{\rho} - Rate_{\pi} \label{eq01}
+\end{equation}
+\begin{equation}
+\frac{d\lbrack Protein\rbrack}{dt} = \ Rate_{\phi} - Rate_{\psi} - Rate_{\mu}\label{eq02}
+\end{equation}
+
+As shown by equations ~\ref{eq01} \&~\ref{eq02}, a gene circuit can regulate a cell through transcription, translation, mRNA loss, protein loss, or any combination of these. System biologists have noticed regulatory patterns, or network motifs, that are statistically over-represented in natural networks that use these control mechanisms. One common network motif is negative autoregulation, where the transcription factor inhibits its own expression.
+
+Before examining network motifs, like negative autoregulation, certain assumptions are usually made to formalize and simplify the ODEs. These assumptions include constant rates, mass action kinetics, and separation of timescales. The constant rate assumption refers to rates, such as protein production and loss, that do not significantly change under the conditions of interest. Applying the law of mass action means that we assume that the reaction rate is proportional to the product of the concentrations of its reactants. To further simplify, we also assume that certain reactants, such as RNA polymerase, ribosomes, and RNase are present at constant levels. These give us the following equations for the change in mRNA and protein concentrations:
+\begin{equation}
+\frac{d\lbrack mRNA\rbrack}{dt} = \ f_{\gamma}\left( \lbrack Protein\rbrack \right) - k_{\rho}\lbrack mRNA\rbrack - k_{\pi}\lbrack mRNA\rbrack\label{eq3}
+\end{equation}
+\begin{equation}
+\frac{d\lbrack Protein\rbrack}{dt} = \ k_{\phi}\lbrack mRNA\rbrack - k_{\psi}\lbrack Protein\rbrack - k_{\mu}\lbrack Protein\rbrack\label{eq4}
+\end{equation}
+
+Due to negative autoregulation, transcription becomes a function dependent on protein concentration. To derive this function, it is necessary to examine the biological processes through which the protein controls transcription.
+\begin{equation}
+Protein +  DNA_{free}
+\ce{<=>[k_{a}][k_{d}]} 
+DNA_{bound}
+\end{equation}
+\begin{equation}
+\frac{d\lbrack DNA_{bound}\rbrack}{dt} = \ \sum_{}^{}{Rates}_{assoc} - \sum_{}^{}{Rates}_{dissoc}\label{eq88}
+\end{equation}
+\begin{equation}
+\frac{d\lbrack DNA_{bound}\rbrack}{dt} = k_{a}\lbrack Protein\rbrack\lbrack DNA_{free}\rbrack - k_{d}\lbrack DNA_{bound}\rbrack\label{eq89}
+\end{equation}
+
+Essentially, the protein binds to free DNA to form a complex that prevents transcription, and this complex can also dissociate to release protein and free DNA. Additionally, this process occurs much faster than the others, so we can assume it is in a steady state via the separation of timescales assumption.
+\begin{equation}
+\frac{d\left\lbrack DNA_{bound} \right\rbrack}{dt}  \approx 0\label{eq5}
+\end{equation}
+\begin{equation}
+\lbrack DNA_{bound}\rbrack \approx \frac{k_{a}}{k_{d}}\lbrack Protein\rbrack\lbrack DNA_{free}\rbrack\label{eq6}
+\end{equation}
+
+Transcription can only occur with unbound DNA, so the function is essentially the maximum rate of transcription multiplied by the ratio of free DNA to the total amount of DNA.
+\begin{multline}
+\left\lbrack DNA_{total} \right\rbrack = \left\lbrack DNA_{bound} \right\rbrack + \left\lbrack DNA_{free} \right\rbrack = \\ \frac{k_{a}}{k_{d}}\lbrack Protein\rbrack\left\lbrack DNA_{free} \right\rbrack + \left\lbrack DNA_{free} \right\rbrack\label{eq7}
+\end{multline}
+\begin{multline}
+\frac{\left\lbrack DNA_{free} \right\rbrack}{\left\lbrack DNA_{total} \right\rbrack} = \ \ \frac{1}{\frac{k_{a}}{k_{d}}\lbrack Protein\rbrack + 1} = \frac{1}{1 + \frac{\lbrack Protein\rbrack}{K}} \\ where\ K = \frac{k_{d}}{k_{a}}\label{eq8}
+\end{multline}
+\begin{equation}
+f_{\gamma}\left( \lbrack Protein\rbrack \right) = k_{max,\gamma}\ \ \frac{1}{1 + \frac{\lbrack Protein\rbrack}{K}}\label{eq9}
+\end{equation}
+Note that the transcription function is a "Hill function for a repressor" with a Hill coefficient of one, and $K$ is the equilibrium constant for the disassociation reaction.
+
+Before revising the ODEs, one can make additional simplifying assumptions. For example, in some cases, mRNA dilution and protein decay are effectively zero because both are much slower than the other rates. Utilizing the transcription function and these additional assumptions, we can express the change in concentration of mRNA and protein in matrix form.
+\begin{equation}
+\begin{pmatrix}
+\frac{d\lbrack mRNA\rbrack}{dt} \\
+\frac{d\lbrack Protein\rbrack}{dt} \\
+\end{pmatrix} = \begin{pmatrix}
+1 & 0 & - 1 & 0 \\
+0 & 1 & 0 & - 1 \\
+\end{pmatrix}\begin{pmatrix}
+\frac{k_{max,\gamma}}{1 + \frac{\lbrack Protein\rbrack}{K}} \\
+k_{\phi}\lbrack mRNA\rbrack \\
+k_{\rho}\lbrack mRNA\rbrack \\
+k_{\mu}\lbrack Protein\rbrack \\
+\end{pmatrix}
+\label{eq10}
+\end{equation}
+
+Our stoichiometric matrix consists of two rows representing the mRNA and protein species and four columns representing the transcription, translation, mRNA decay, and protein dilution reactions, respectively. Using this notation, represented by \begin{math}\mathbf{C} = \mathbf{Sv} \end{math}, allows us to study the network's structure separately from the dynamic properties of the reactions.
+
+\subsection{Metabolic Networks}
+
+Metabolic networks are composed of interactions between biomolecules (metabolites) and enzymes, which control the flux of metabolites by catalyzing their biochemical reactions\cite{b15}. The subnetworks, or pathways, comprising a cell’s overall metabolic network are the critical biological processes that regulatory networks regulate through protein interactions. Metabolic networks, in turn, regulate gene expression via metabolites activating or inhibiting transcription factors, creating a reciprocal relationship\cite{b16}.
+
+Systems of ODEs have been used to model the metabolism of RBCs for nearly half a century. These models initially focused on the glycolytic pathway\cite{b17, b18}. However, they were later expanded to include other features, such as the pentose phosphate pathway, the glutathione pathway, the adenine nucleotide pathway, and ion fluxes across the cell membrane\cite{b19, b20, b21, b22}. Joshi and Palsson constructed the first comprehensive metabolic models of RBCs, which included membrane transports, the Na+/K+ pump, and osmotic pressure\cite{b23, b24, b25, b26}. This model has since undergone updates and modifications to study changes in metabolite concentrations, the flow of metabolites, enzymopathies, and drug side effects in personalized kinetic models\cite{b12, b27, b28, b29, b30, b31}.
+
+Constructing an ODE model of a metabolic network is similar to building a gene regulatory network model. However, we can speed up the process by treating network topology and kinetics separately using matrix notation. To create the stoichiometric matrix, one can begin with a directed graph of nodes with inflows and outflows, a list of chemical equations, or both. For example, we can see an example of early stage glycolysis through Fig.~\ref{fig2} and equations ~\ref{eqG1},~\ref{eqG2},\&~\ref{eqG3}.
+\begin{figure}[htbp]
+  \centering
+ \digraph[scale=0.4]{glycolysis}{
+layout="neato";
+rankdir = LR;
+splines="spline";
+overlap = false;
+start=1089880023
+node [shape=doublecircle, style=filled, fillcolor=white, fontcolor = "black"] Glc;
+node [shape=octagon, style=radial, fillcolor="grey40", fontcolor = "white"] HK, PGI, PFK ;
+node [shape=circle, style=filled, fillcolor=white, fontcolor = "black"] ATP, H, ADP, FBP;
+node [shape=circle, style=filled, fillcolor=grey, fontcolor = "Black"]  G6P, F6P;
+
+Glc -> HK;
+ATP -> HK;
+HK -> H;
+HK -> ADP;
+HK -> G6P;
+G6P -> PGI [dir="both"];
+PGI -> F6P [dir="both"];
+ATP -> PFK;
+F6P ->PFK;
+PFK -> FBP;
+PFK -> ADP
+ 
+}
+  \caption{The graph is a directed diagram that depicts the first steps of glycolysis, where glucose (Glc) is converted into Glucose-6 phosphate (G6P) by hexokinase (HK), followed by the reversible conversion of G6P into Fructose 6-phosphate (F6P) by Glucose-6-phosphate isomerase (PGI), and subsequently processed downstream by Phosphofructokinase (PFK) which converts F6P into Fructose 1,6-bisphosphate (FBP). Dark grey nodes are enzymes, and light gray nodes are the metabolites of interest.}
+  \label{fig2}
+\end{figure}
+
+\begin{equation}
+Glc +  ATP
+\ce{->[HK]} 
+G6P + ADP + H
+\label{eqG1}
+\end{equation}
+\begin{equation}
+G6P
+\ce{<=>[PGI]} 
+F6P
+\label{eqG2}
+\end{equation}
+\begin{equation}
+F6P + ATP
+\ce{->[PFK]} 
+FBP + ADP
+\label{eqG3}
+\end{equation}
+
+Assuming the enzymes are in abundance, the matrix contains three columns representing the enzymatic reactions and two rows indicating the stoichiometric coefficients of the metabolites of interest. The sign convention assigns negative coefficients to reactants and positive coefficients to products. For reversible reactions, we assume a preference for the forward reaction, but the equilibrium constant, \begin{math}K_{eq}\end{math}, ultimately determines the direction of the reaction.
+\begin{equation}
+\mathbf{Sv}
+=
+\begin{pNiceMatrix}[first-row,first-col]
+    & HK & PGI & PFK  \\
+G6P & 1   & -1   & 0    \\
+F6P & 0   & 1   & -1    \\
+\end{pNiceMatrix}
+\begin{pNiceMatrix}
+v_{HK} \\
+v_{PGI} \\
+v_{PFK} \\
+\end{pNiceMatrix}
+\label{eq19}
+\end{equation}
+
+One key feature of metabolic networks is their ability to maintain homeostasis in response to dietary changes, and we can examine the steady state by setting the equation equal to zero, \begin{math}\mathbf{Sv=0}\end{math}\cite{b32}. Because flux and the change in metabolite concentrations are constant in a steady state, there are several ways to analyze the system without kinetic information, such as elementary flux modes, extreme pathways,  metabolic control, minimal metabolic behaviors, and flux balance analysis or constraint-based modeling\cite{b15, b34, b35, b36, b37, b38}. However, this review’s primary concern is with the dynamic system, which means the next step is to determine the reaction rates (\begin{math}v_{HK}, v_{PGI},\end{math} \& \begin{math}v_{PFK}\end{math}) and the appropriate parameters.
+
+The classic method is to go to the available literature or databases, like KEGG, BioCyc, and BRENDA, to determine the kinetics and their constants. You will often find Michaelis-Menten model approximations and in vitro-derived values. This is because determining the exact kinetics of an enzyme in vivo can be challenging\cite{c1}.
+
+A modern approach to obtaining personalized kinetics that reflects an individual's unique biology is to gather omics data and use a computer algorithm to create a phenomenological model of the kinetics. For example, the Palsson group used a bulk parameter estimation method called the "pseudo-elementary rate constant" (PERC)\cite{b31}. They even compared this technique to the explicit rate law model and found that the choice in kinetics was less critical than the individual's data with respect to variability.
+
+\subsection{Signaling Networks}
+
+Signaling networks are crucial in coordinating various cellular activities by processing signals from outside and inside the cell, so they are intimately tied to metabolic and gene regulatory networks\cite{b33}. However, their focus lies in intracellular signal transduction pathways involving ligand-receptor binding and subsequent reactions that alter the cell's behavior, not maintenance or regulation. Various types of molecules, including proteins, ions, small molecules, and phospholipids, participate in numerous pathways that can interact with each other and are impacted by the concentration of molecular species already in the cell. Therefore, these networks are at the highest level of control and the most complex to model.
+
+Concerning RBCs, signaling networks play a significant role in aggregation, deformability, immune response, erythropoiesis, erythrophagocytosis, and vesiculation\cite{b39, b40, b41, b42, b43, b44, b45, b46, b47}. Moreover,  RBCs act as global messengers by transporting critical signaling molecules to other cells\cite{b48}. Signaling usually begins with an extracellular ligand binding to a membrane-bound receptor, so there is a significant spatial component to modeling cell signaling.
+
+We must model distinct species and reactions for each compartment to compartmentalize space. Fig.~\ref{fig3} provides a simplified illustration of G-protein coupled receptor (GPCR) signal transduction, which eventually results in the phosphorylation of a target protein in the cytoskeleton and increased deformability of a red blood cell. Note that, for demonstration purposes, the extracellular space contains cyclic adenosine monophosphate (cAMP), which degrades rapidly.
+
+\begin{figure}[htbp]
+  \centering
+ \digraph[scale=0.4]{GPCR}{ 
+    rankdir="LR";
+    layout = fdp;
+    overlap = false;
+    splines = true;
+    node [fixedsize=true, width=1.2, height=1];
+    graph [fontsize=20];
+
+  subgraph cluster_0 {
+    label = "Extracellular Space";  
+    fontname="times bold";
+
+    Epi [ shape=doublecircle, style=filled, fillcolor=white, fontsize=20, fontcolor = "black"];
+    cAMP2 [shape=circle, label = "cAMP", style=filled, fontsize=20, fillcolor=grey, fontcolor = "Black"];
+    Loss [label="Degradation", fontsize=16,  shape=circle, style=dashed, fillcolor=white, fontcolor = "Black"];
+    
+    subgraph cluster_1 {
+    label = "Membrane";
+    fontname="times bold";
+    style = dashed;
+    GPCR [style=radial, fillcolor="grey40", fontcolor = "white"];
+    AC [shape=octagon, style=radial, fillcolor="grey40", fontcolor = "white"];
+    
+
+    
+     subgraph cluster_2 {
+    label = "Cytoplasm";
+    fontname="times bold";
+    cAMP [shape=circle, style=filled, fontsize=20, fillcolor=grey, fontcolor = "Black"];
+    PKA [shape=octagon, style=radial, fillcolor="grey40", fontcolor = "white"];
+    ATP [shape=circle, fontsize=20, style=filled, fillcolor=grey, fontcolor = "Black"];
+    dt [label="Target", fontsize=20,  shape=circle, style=filled, fillcolor=white, fontcolor = "Black"];
+  }
+  }
+  }
+  
+Epi -> GPCR ;
+GPCR -> AC ;
+ATP -> AC ;
+AC -> cAMP ;
+cAMP -> PKA ;
+PKA -> dt ;
+cAMP2 -> Loss;
+
+}
+  \caption{A simplified three-compartment diagram of G-protein coupled receptor (GPCR) mediated signal transduction, ultimately leading to protein kinase A (PKA) phosphorylation of a target protein in the cytoskeleton to increase RBC deformability. The outer compartment is the extracellular space that contains epinephrine (Epi) and rapidly degrading cyclic adenosine monophosphate (cAMP). The Epi acts as a ligand and binds to GPCR in the membrane, activating adenylate cyclase (AC). The AC then converts ATP to cAMP in the cytoplasm. Intracellular cAMP activates PKA, which phosphorylates a target protein.}
+  \label{fig3}
+\end{figure}
+
+Our attention is directed towards three species involved in the process, ceteris paribus: extracellular cAMP,  intracellular cAMP, and cytoplasmic ATP. The reactions of interest include extracellular cAMP degradation, ATP-to-cAMP conversion within the cytoplasm, and intracellular activation of protein kinase A (PKA).
+\begin{equation}
+\mathbf{Sv}
+=
+\begin{pNiceMatrix}[first-row,first-col]
+           & Deg_{ext} & AC_{mem} & PKA_{cyt}  \\
+cAMP_{ext} & -1        & 0        & 0    \\
+cAMP_{cyt} & 0         & 1        & -1    \\
+ATP_{cyt}  & 0         & -1       & 0    \\
+\end{pNiceMatrix}
+\begin{pNiceMatrix}
+v_{Deg_{ext}} \\
+v_{AC_{mem}} \\
+v_{PKA_{cyt}} \\
+\end{pNiceMatrix}
+\label{eq20}
+\end{equation}
+
+In order to separate these into compartments, we give them unique labels that denote their compartment. In this case, we label extracellular species and reactions with the \begin{math}ext\end{math} subscript and intracellular species and reactions with the \begin{math}cyt\end{math} subscript. Also, we note that adenylate cyclase (AC) exists in the membrane, \begin{math}mem\end{math}.
+
+\section{Methodology}
+A list of keywords and phrases related to the topic was developed to identify relevant literature for this review. This list included terms such as "biological circuit," "cell signaling," "computational biology," "computational modeling," "erythrocyte," "erythropoiesis," "gene expression," "gene regulatory networks," "hematopoiesis," "hematopoietic stem cells," "intracellular signaling," "mathematical biology," "mathematical modeling," "metabolic networks," "metabolic pathways," "network analysis," "ordinary differential equations," "parameter estimation," "red blood cells," "signaling networks," "systems biology," and "transfusion."
+
+Boolean operators combined these terms in various ways, such as "ordinary differential equations" AND "red blood cells," and relevant literature was searched for on Google search, Google Scholar, PubMed, and the Web of Science. To identify additional relevant articles, citation chaining was employed. Also, articles that cited the relevant literature were found on the Web of Science. Furthermore, an online application called "researchrabbitapp.com" helped to visualize the network of articles and find similar publications.
+
+The only inclusion criterion was relevance to the subject under consideration, or at least relevance to a facet of the subject under discussion. EndNote managed the references. Overall, this search strategy enabled a comprehensive range of relevant literature to be reviewed for this study.
+
+\section{Discussion}
+ Computational methods are essential for ODE models of RBCs. One must have a working knowledge of various numerical methods for solving them, as well as an understanding of the algorithms used to develop ODE models from omics data, the standards for storing and exchanging these models, and the computing platforms that integrate all of these components with tools for data analysis. 
+ 
+ For models with thousands of reaction networks, the by-hand approach covered in the background section is infeasible, which is why databases and inference techniques exist to help automate the process. Still, there is currently no gold standard, and in the case of regulatory network inference, numerous imperfect options exist\cite{b49, b50, b51, b52, b53}. Neither are there gold standards for numerical methods and computing platforms. While the Runge-Kutta method is commonly used for ODEs, it may not work for all types of equations, and although COBRA is a powerful MATLAB tool for constraint-based analysis, it may not be as flexible or fast as other options\cite{b5, b8, b54}. Fortunately, community standards exist for storage and exchange. Many models are available in either Systems Biology Markup Language (SBML) or Cell Markup Language (CellML) format on platforms such as BioModels and JWS\cite{b5, b55, b56, b57}. Still, these formats lack symbolic representations, leading to efforts to convert and store models as symbolic ODEs for qualitative analysis\cite{b58}. 
+
+ In addition to having the proper computational tools, one must be mindful of the inherent limitations of modeling RBCs with the reaction network abstraction, specifically spatial homogeneity and parameterization. These ODEs only consider changes in one independent variable, usually time. Thus, they assume a well-mixed system. Although we can separate reactions through compartmentalization, we cannot consider a compartment with minute amounts of a particular substance well-mixed\cite{b4}. Also, recent observations that multi-protein complexes form in RBCs suggest the importance of considering spatial effects, even in models focusing on metabolic reactions\cite{b59, b60}. Moreover, the spatial homogeneity limitation means modeling RBC morphology (shape) is difficult, if not impossible, with this framework alone.  A potential solution is the bulk-surface partial differential equation approach, which extends ordinary differential equations with cellular compartments as a volume and cellular structures as an area. These are shown effective in models for cell polarization in cell signaling systems, but with an increase in the number of variables comes an increase in complexity\cite{b61}.
+ 
+Parameterization, in RBC modeling, refers to determining reaction rates, which can be obtained through various methods but are mostly based on in vitro studies due to the difficulty of measuring reaction rates in vivo\cite{c1}. Although estimation techniques, such as PERC, are available, they depend entirely on the data and may be negatively affected by noise or unable to generalize. As a result, the limitations of parameterization lead researchers to prefer flux based analysis over kinetic models\cite{b62}.
+
+ Despite their limitations, reaction networks of ODEs have been fundamental to metabolic modeling. The most comprehensive open-access RBC metabolic model to date is Bordbar et al.'s iAB-RBC-283, which utilizes proteomics data and manually curated information from the literature to create a genome-scale metabolic reconstruction\cite{b27}. While lacking in reaction kinetics necessary for dynamic models, iAB-RBC-283 provides a two-compartment model in SBML format with 342 molecular species and 469 reactions. Additionally, the reaction data contains thermodynamic directionality for flux analysis, and the model serves as a basis for newer models to incorporate reaction kinetics\cite{b29, b31}.
+
+Indubitably, the iAB-RBC-283 model is an impressive accomplishment, but it only represents a fraction of the documented proteins found in RBCs\cite{b1, b60}. Therefore, in addition to adding kinetics, there is ample room for improvement by including more reactions, species, and compartments to better segregate multi-protein complexes. The field's trajectory suggests that this extension is inevitable, and recent advancements in omics technologies and machine learning make it seem relatively straightforward. Furthermore, the ongoing collaborations between Dr. Bernhard O. Palsson and Dr. Angelo D'Alessandro hint that an improved model is already in the works\cite{b63, b64, b65}.
+
+Going further would be to model whole hematopoietic stem cells as they differentiate into RBCs through erythropoiesis. However, current gene regulatory models have been limited to small networks due to the difficulty in automating the construction of larger networks and the computational complexity of numerically solving large ODE models\cite{b66, b67, b68, b69}. Therefore, a potential solution is to combine a less computationally intensive approach, such as boolean networks or logic-based models, with ODE metabolic models. Additionally, incorporating the bulk-surface PDE extension to ODE models could enable more accurate modeling of the impact of space on cell signaling and morphology, but it would be counter productive in reducing computational complexity.
+
+Finally, it is worth mentioning that similar models to iAB-RBC-283 are available for platelets, yeast, and E. coli, but interactions between these models in the extracellular space are not well-documented\cite{b30}. Although their limitations may not enable them to fully recapitulate their true biological interactions, it would be worthwhile to evaluate the extent of deviation from in vitro experiments and identify potential improvements. Based on the findings of this review, whole-cell models represent the future of personalized medicine, as in silico experiments offer a fast and cost-effective approach for drug development. Furthermore, one can envision multi-whole cell models assisting the development of biological computer-aided drafting (CAD) software for synthetic biologists, allowing them to obtain a holistic view of the systems they design for healthcare.
+
+
+\section{Conclusion}
+In summary, this review provided a basic background on modeling biological systems using ODE reaction networks while highlighting their importance in developing computational methods and models for understanding the complex biological systems of red blood cells. It acknowledges the infeasibility of the manual approach to large reaction network construction, as well as the limitations of current models, including spatial homogeneity, parameterization, and computational complexity. Potential improvements were suggested through the incorporation of other computational techniques, such as bulk-surface PDEs, parameter estimation, and Boolean networks in the case of hematopoietic stem cells models, as well as more data from omics technologies like proteomics, lipidomics, and metabolomics.
+
+The ODE approach to modeling RBCs has been used for over four decades and has furthered our understanding of cell metabolism and enabled drug interaction predictions for personalized medicine. Despite inherent limitations, such as the inability to capture spatial heterogeneity, there is ample room for advancement through expanding ODE models with other modeling techniques and including more data. 
+
+Whole-cell models of RBCs have the potential to benefit many fields, such as transfusion medicine, by enabling fast and cost-effective personalized medicine, new blood storage techniques, and methods for rejuvenating old blood. Although it is difficult to predict the progress that multi-whole-cell models might yield, the foundation for exploration is there, and many research opportunities in the field exist. To make the most of these opportunities, researchers must be proficient with the basics, capable of utilizing available computational tools, and willing to keep pace with the technological advancements that are continually occurring.
+
+\begin{thebibliography}{00}
+\bibitem{b1} A. D’Alessandro, "Red Blood Cell Omics and Machine Learning in Transfusion Medicine: Singularity Is Near," Transfusion Medicine and Hemotherapy, pp. 1-10, 2023, doi: 10.1159/000529744.
+\bibitem{b2} J. T. Yurkovich, A. Bordbar, Ó. E. Sigurjónsson, and B. O. Palsson, "Systems biology as an emerging paradigm in transfusion medicine," BMC Systems Biology, vol. 12, no. 1, 2018, doi: 10.1186/s12918-018-0558-x.
+\bibitem{b3} S. Franklin and T. M. Vondriska, "Genomes, Proteomes, and the Central Dogma," Circulation: Cardiovascular Genetics, vol. 4, no. 5, pp. 576-576, 2011, doi: 10.1161/circgenetics.110.957795.
+\bibitem{b4} M. Covert, Fundamentals of systems biology : from synthetic circuits to whole-cell models. Boca Raton: CRC Press,Taylor \& Francis Group, 2015, pp. xix, 347 pages.
+\bibitem{b5} P. Städter, Y. Schälte, L. Schmiester, J. Hasenauer, and P. L. Stapor, "Benchmarking of numerical integration methods for ODE models of biological systems," Scientific Reports, vol. 11, no. 1, 2021, doi: 10.1038/s41598-021-82196-2.
+\bibitem{b6} V. Porubsky, L. Smith, and H. M. Sauro, "Publishing reproducible dynamic kinetic models," Briefings in Bioinformatics, vol. 22, no. 3, 2021, doi: 10.1093/bib/bbaa152.
+\bibitem{b7} H. Panchiwala et al., "The systems biology simulation core library," Bioinformatics, vol. 38, no. 3, pp. 864-865, 2022, doi: 10.1093/bioinformatics/btab669.
+\bibitem{b8} G. Tuncer and V. Purutçuoğlu, "Major Simulation Tools for Biochemical Networks," in Modeling, Dynamics, Optimization and Bioeconomics III, (Springer Proceedings in Mathematics \& Statistics, 2018, ch. Chapter 23, pp. 443-467.
+\bibitem{b9} L. Marchetti, C. Priami, and V. H. Thanh, Simulation Algorithms for Computational Systems Biology, 1st ed. Cham: Springer International Publishing : Imprint: Springer,, 2017, pp. 1 online resource (XI, 238 pages 52 illustrations, 23 illustrations in color.
+\bibitem{b10} J. Cao, X. Qi, and H. Zhao, "Modeling Gene Regulation Networks Using Ordinary Differential Equations," in Next Generation Microarray Bioinformatics, (Methods in Molecular Biology, 2012, ch. Chapter 12, pp. 185-197.
+\bibitem{b11} A. L. Caulier and V. G. Sankaran, "Molecular and cellular mechanisms that regulate human erythropoiesis," Blood, vol. 139, no. 16, pp. 2450-2459, 2022, doi: 10.1182/blood.2021011044.
+\bibitem{b12} N. Jamshidi, S. J. Wiback, and B. Ø. Palsson, "In Silico Model-Driven Assessment of the Effects of Single Nucleotide Polymorphisms (SNPs) on Human Red Blood Cell Metabolism," Genome Research, vol. 12, no. 11, pp. 1687-1692, 2002, doi: 10.1101/gr.329302.
+\bibitem{b13} A. Repiso, B. Oliva, J.-L. Vives-Corrons, E. Beutler, J. Carreras, and F. Climent, "Red cell glucose phosphate isomerase (GPI): a molecular study of three novel mutations associated with hereditary nonspherocytic hemolytic anemia," Human Mutation, vol. 27, no. 11, pp. 1159-1159, 2006, doi: 10.1002/humu.9466.
+\bibitem{b14} M. Punta, N. Mih, E. Brunk, A. Bordbar, and B. O. Palsson, "A Multi-scale Computational Platform to Mechanistically Assess the Effect of Genetic Variation on Drug Responses in Human Erythrocyte Metabolism," PLOS Computational Biology, vol. 12, no. 7, 2016, doi: 10.1371/journal.pcbi.1005039.
+\bibitem{b15} T. Sauter and M. Albrecht, Introduction to Systems Biology. 2023.
+\bibitem{b16} D. F. Klosik, A. Grimbs, S. Bornholdt, and M.-T. Hütt, "The interdependent network of gene regulation and metabolism is robust where it needs to be," Nature Communications, vol. 8, no. 1, 2017, doi: 10.1038/s41467-017-00587-4.
+\bibitem{b17} F. I. Ataullakhanov et al., "The Regulation of Glycolysis in Human Erythrocytes. The Dependence of the Glycolytic Flux on the ATP Concentration," European Journal of Biochemistry, vol. 115, no. 2, pp. 359-365, 1981, doi: 10.1111/j.1432-1033.1981.tb05246.x.
+\bibitem{b18} T. A. Rapoport, R. Heinrich, and S. M. Rapoport, "The regulatory principles of glycolysis in erythrocytes in vivo and in vitro. A minimal comprehensive model describing steady states, quasi-steady states and time-dependent processes," Biochemical Journal, vol. 154, no. 2, pp. 449-469, 1976, doi: 10.1042/bj1540449.
+\bibitem{b19} M. Brumen and R. Heinrich, "A metabolic osmotic model of human erythrocytes," Biosystems, vol. 17, no. 2, pp. 155-169, 1984, doi: 10.1016/0303-2647(84)90006-6.
+\bibitem{b20} M. Schauer, R. Heinrich, and S. M. Rapoport, "[Mathematical modelling of glycolysis and adenine nucleotide metabolism of human erythrocytes. I. Reaction-kinetic statements, analysis of in vivo state and determination of starting conditions for in vitro experiments]," Acta Biol Med Ger, vol. 40, no. 12, pp. 1659-82, 1981. [Online]. Available: https://www.ncbi.nlm.nih.gov/pubmed/6285649. Mathematische Modellierung der Glykolyse und des Adeninnukleotidstoffwechsels menschlicher Erythrozyten. I. Reaktionskinetische Ansatze, Analyse des in vivo-Zustandes und Bestimmung der Anfangsbedingungen fur die in vitro-Experimente.
+\bibitem{b21} R. Schuster, H.-G. Holzhütter, and G. Jacobasch, "Interrelations between glycolysis and the hexose monophosphate shunt in erythrocytes as studied on the basis of a mathematical model," Biosystems, vol. 22, no. 1, pp. 19-36, 1988, doi: 10.1016/0303-2647(88)90047-0.
+\bibitem{b22} D. R. Thorburn and P. W. Kuchel, "Regulation of the human-erythrocyte hexose-monophosphate shunt under conditions of oxidative stress. A study using NMR spectroscopy, a kinetic isotope effect, a reconstituted system and computer simulation," European Journal of Biochemistry, vol. 150, no. 2, pp. 371-380, 1985, doi: 10.1111/j.1432-1033.1985.tb09030.x.
+\bibitem{b23} A. Joshi and B. O. Palsson, "Metabolic dynamics in the human red cell: Part I—A comprehensive kinetic model.," Journal of Theoretical Biology, vol. 141, no. 4, pp. 515-528, 1989, doi: 10.1016/s0022-5193(89)80233-4.
+\bibitem{b24} A. Joshi and B. O. Palsson, "Metabolic dynamics in the human red cell. Part II–Interactions with the environment," Journal of Theoretical Biology, vol. 141, no. 4, pp. 529-545, 1989, doi: 10.1016/s0022-5193(89)80234-6.
+\bibitem{b25} A. Joshi and B. O. Palsson, "Metabolic dynamics in the human red cell. Part III—Metabolic reaction rates," Journal of Theoretical Biology, vol. 142, no. 1, pp. 41-68, 1990, doi: 10.1016/s0022-5193(05)80012-8.
+\bibitem{b26} A. Joshi and B. O. Palsson, "Metabolic dynamics in the human red cell. Part IV—Data prediction and some model computations," Journal of Theoretical Biology, vol. 142, no. 1, pp. 69-85, 1990, doi: 10.1016/s0022-5193(05)80013-x.
+\bibitem{b27} A. Bordbar, N. Jamshidi, and B. O. Palsson, "iAB-RBC-283: A proteomically derived knowledge-base of erythrocyte metabolism that can be used to simulate its physiological and patho-physiological states," BMC Systems Biology, vol. 5, no. 1, 2011, doi: 10.1186/1752-0509-5-110.
+\bibitem{b28} Y. Nakayama, A. Kinoshita, and M. Tomita, "Dynamic simulation of red blood cell metabolism and its application to the analysis of a pathological condition," Theoretical Biology and Medical Modelling, vol. 2, no. 1, 2005, doi: 10.1186/1742-4682-2-18.
+\bibitem{b29} J. T. Yurkovich, L. Yang, and B. O. Palsson, "Systems-level physiology of the human red blood cell is computed from metabolic and macromolecular mechanisms," 2019, doi: 10.1101/797258.
+\bibitem{b30} A. Bordbar, J. T. Yurkovich, G. Paglia, O. Rolfsson, Ó. E. Sigurjónsson, and B. O. Palsson, "Elucidating dynamic metabolic physiology through network integration of quantitative time-course metabolomics," Scientific Reports, vol. 7, no. 1, 2017, doi: 10.1038/srep46249.
+\bibitem{b31} A. Bordbar, D. McCloskey, Daniel C. Zielinski, N. Sonnenschein, N. Jamshidi, and Bernhard O. Palsson, "Personalized Whole-Cell Kinetic Models of Metabolism for Discovery in Genomics and Pharmacodynamics," Cell Systems, vol. 1, no. 4, pp. 283-292, 2015, doi: 10.1016/j.cels.2015.10.003.
+\bibitem{b32} E. Watson, L. S. Yilmaz, and A. J. M. Walhout, "Understanding Metabolic Regulation at a Systems Level: Metabolite Sensing, Mathematical Predictions, and Model Organisms," Annual Review of Genetics, vol. 49, no. 1, pp. 553-575, 2015, doi: 10.1146/annurev-genet-112414-055257.
+\bibitem{b33} E. Klipp and W. Liebermeister, "Mathematical modeling of intracellular signaling pathways," BMC Neuroscience, vol. 7, no. S1, 2006, doi: 10.1186/1471-2202-7-s1-s10.
+\bibitem{b34} J. D. Orth, I. Thiele, and B. Ø. Palsson, "What is flux balance analysis?," Nature Biotechnology, vol. 28, no. 3, pp. 245-248, 2010, doi: 10.1038/nbt.1614.
+\bibitem{b35} J. A. Papin, N. D. Price, and B. Ø. Palsson, "Extreme Pathway Lengths and Reaction Participation in Genome-Scale Metabolic Networks," Genome Research, vol. 12, no. 12, pp. 1889-1900, 2002, doi: 10.1101/gr.327702.
+\bibitem{b36} S. J. Wiback and B. O. Palsson, "Extreme Pathway Analysis of Human Red Blood Cell Metabolism," Biophysical Journal, vol. 83, no. 2, pp. 808-818, 2002, doi: 10.1016/s0006-3495(02)75210-7.
+\bibitem{b37} A. Larhlimi and A. Bockmayr, "A new constraint-based description of the steady-state flux cone of metabolic networks," Discrete Applied Mathematics, vol. 157, no. 10, pp. 2257-2266, 2009, doi: 10.1016/j.dam.2008.06.039.
+\bibitem{b38} C. R. Angelani et al., "A metabolic control analysis approach to introduce the study of systems in biochemistry: the glycolytic pathway in the red blood cell," Biochem Mol Biol Educ, vol. 46, no. 5, pp. 502-515, Sep 2018, doi: 10.1002/bmb.21139.
+\bibitem{c1}K. van Eunen and B. M. Bakker, "The importance and challenges of in vivo-like enzyme kinetics," Perspectives in Science, vol. 1, no. 1-6, pp. 126-130, 2014, doi: 10.1016/j.pisc.2014.02.011.
+\bibitem{b39} M. C. Wilkes, A. Shibuya, and K. M. Sakamoto, "Signaling Pathways That Regulate Normal and Aberrant Red Blood Cell Development," Genes, vol. 12, no. 10, 2021, doi: 10.3390/genes12101646.
+\bibitem{b40} A. N. Semenov, E. A. Shirshin, A. V. Muravyov, and A. V. Priezzhev, "The Effects of Different Signaling Pathways in Adenylyl Cyclase Stimulation on Red Blood Cells Deformability," Frontiers in Physiology, vol. 10, 2019, doi: 10.3389/fphys.2019.00923.
+\bibitem{b41} E. B. Kostova et al., "Identification of signalling cascades involved in red blood cell shrinkage and vesiculation," Biosci Rep, vol. 35, no. 2, Apr 16 2015, doi: 10.1042/BSR20150019.
+\bibitem{b42} N. Cilek, E. Ugurel, E. Goksel, and O. Yalcin, "Signaling mechanisms in red blood cells: A view through the protein phosphorylation and deformability," Journal of Cellular Physiology, 2023, doi: 10.1002/jcp.30958.
+\bibitem{b43} E. Karsten and B. R. Herbert, "The emerging role of red blood cells in cytokine signalling and modulating immune cells," Blood Reviews, vol. 41, 2020, doi: 10.1016/j.blre.2019.100644.
+\bibitem{b44} C. F. Arias and C. F. Arias, "How do red blood cells know when to die?," Royal Society Open Science, vol. 4, no. 4, 2017, doi: 10.1098/rsos.160850.
+\bibitem{b45} L. K. M. Lam et al., "DNA binding to TLR9 expressed by red blood cells promotes innate immune activation and anemia," Science Translational Medicine, vol. 13, no. 616, 2021, doi: 10.1126/scitranslmed.abj1008.
+\bibitem{b46} A. Muravyov and I. Tikhomirova, "Signaling pathways regulating red blood cell aggregation," Biorheology, vol. 51, no. 2-3, pp. 135-145, 2014, doi: 10.3233/bir-140664.
+\bibitem{b47} A. V. Muravyov and I. A. Tikhomirova, "Role molecular signaling pathways in changes of red blood cell deformability," Clin Hemorheol Microcirc, vol. 53, no. 1-2, pp. 45-59, 2013, doi: 10.3233/CH-2012-1575.
+\bibitem{b48} C. Papadopoulos, I. Tentes, and K. Anagnostopoulos, "Molecular Interactions between Erythrocytes and the Endocrine System," Maedica (Bucur), vol. 16, no. 3, pp. 489-492, Sep 2021, doi: 10.26574/maedica.2020.16.3.489.
+\bibitem{b49} B. Ma, M. Fang, X. Jiao, and L. Cowen, "Inference of gene regulatory networks based on nonlinear ordinary differential equations," Bioinformatics, vol. 36, no. 19, pp. 4885-4893, 2020, doi: 10.1093/bioinformatics/btaa032.
+\bibitem{b50} H. Nguyen, D. Tran, B. Tran, B. Pehlivan, and T. Nguyen, "A comprehensive survey of regulatory network inference methods using single cell RNA sequencing data," Briefings in Bioinformatics, vol. 22, no. 3, 2021, doi: 10.1093/bib/bbaa190.
+\bibitem{b51} L. Fang, Y. Li, L. Ma, Q. Xu, F. Tan, and G. Chen, "GRNdb: decoding the gene regulatory networks in diverse human and mouse conditions," Nucleic Acids Research, vol. 49, no. D1, pp. D97-D103, 2021, doi: 10.1093/nar/gkaa995.
+\bibitem{b52} G. Mao, R. Zeng, J. Peng, K. Zuo, Z. Pang, and J. Liu, "Reconstructing gene regulatory networks of biological function using differential equations of multilayer perceptrons," BMC Bioinformatics, vol. 23, no. 1, 2022, doi: 10.1186/s12859-022-05055-5.
+\bibitem{b53} J. Xu, A. Zhang, F. Liu, X. Zhang, and I. Birol, "STGRNS: an interpretable transformer-based method for inferring gene regulatory networks from single-cell transcriptomic data," Bioinformatics, vol. 39, no. 4, 2023, doi: 10.1093/bioinformatics/btad165.
+\bibitem{b54} L. Heirendt et al., "Creation and analysis of biochemical constraint-based models using the COBRA Toolbox v.3.0," Nature Protocols, vol. 14, no. 3, pp. 639-702, 2019, doi: 10.1038/s41596-018-0098-2.
+\bibitem{b55} R. S. Malik-Sheriff et al., "BioModels-15 years of sharing computational models in life science," Nucleic Acids Res, vol. 48, no. D1, pp. D407-D415, Jan 8 2020, doi: 10.1093/nar/gkz1055.
+\bibitem{b56} M. Hucka et al., "Promoting Coordinated Development of Community-Based Information Standards for Modeling in Biology: The COMBINE Initiative," Frontiers in Bioengineering and Biotechnology, vol. 3, 2015, doi: 10.3389/fbioe.2015.00019.
+\bibitem{b57} D. Waltemath et al., "The first 10 years of the international coordination network for standards in systems and synthetic biology (COMBINE)," Journal of Integrative Bioinformatics, vol. 17, no. 2-3, 2020, doi: 10.1515/jib-2020-0005.
+\bibitem{b58} C. Lüders, T. Sturm, O. Radulescu, and M. L. Kuijjer, "ODEbase: a repository of ODE systems for systems biology," Bioinformatics Advances, vol. 2, no. 1, 2022, doi: 10.1093/bioadv/vbac027.
+\bibitem{b59} A. Yachie-Kinoshita, T. Nishino, H. Shimo, M. Suematsu, and M. Tomita, "A Metabolic Model of Human Erythrocytes: Practical Application of the E-Cell Simulation Environment," Journal of Biomedicine and Biotechnology, vol. 2010, pp. 1-14, 2010, doi: 10.1155/2010/642420.
+\bibitem{b60} W. Sae-Lee et al., "The protein organization of a red blood cell," Cell Reports, vol. 40, no. 3, 2022, doi: 10.1016/j.celrep.2022.111103.
+\bibitem{b61} W. Giese, G. Milicic, A. Schroder, and E. Klipp, "Spatial modeling of the membrane-cytosolic interface in protein kinase signal transduction," PLoS Comput Biol, vol. 14, no. 4, p. e1006075, Apr 2018, doi: 10.1371/journal.pcbi.1006075.
+\bibitem{b62} J. T. Yurkovich and B. O. Palsson, "Quantitative -omic data empowers bottom-up systems biology," Current Opinion in Biotechnology, vol. 51, pp. 130-136, 2018, doi: 10.1016/j.copbio.2018.01.009.
+\bibitem{b63} T. Nemkov et al., "Blood donor exposome and impact of common drugs on red blood cell metabolism," JCI Insight, vol. 6, no. 3, 2021, doi: 10.1172/jci.insight.146175.
+\bibitem{b64} G. Paglia et al., "Biomarkers defining the metabolic age of red blood cells during cold storage," Blood, vol. 128, no. 13, pp. e43-e50, 2016, doi: 10.1182/blood-2016-06-721688.
+\bibitem{b65} A. D'Alessandro, T. Nemkov, T. Yoshida, A. Bordbar, B. O. Palsson, and K. C. Hansen, "Citrate metabolism in red blood cells stored in additive solution‐3," Transfusion, vol. 57, no. 2, pp. 325-336, 2016, doi: 10.1111/trf.13892.
+\bibitem{b66} J. Narula, C. J. Williams, A. Tiwari, J. Marks-Bluth, J. E. Pimanda, and O. A. Igoshin, "Mathematical model of a gene regulatory network reconciles effects of genetic perturbations on hematopoietic stem cell emergence," Developmental Biology, vol. 379, no. 2, pp. 258-269, 2013, doi: 10.1016/j.ydbio.2013.04.016.
+\bibitem{b67} A. Ocone, L. Haghverdi, N. S. Mueller, and F. J. Theis, "Reconstructing gene regulatory dynamics from high-dimensional single-cell snapshot data," Bioinformatics, vol. 31, no. 12, pp. i89-i96, 2015, doi: 10.1093/bioinformatics/btv257.
+\bibitem{b68} J. Wei, X. Hu, X. Zou, and T. Tian, "Reverse-engineering of gene networks for regulating early blood development from single-cell measurements," BMC Medical Genomics, vol. 10, no. S5, 2017, doi: 10.1186/s12920-017-0312-z.
+\bibitem{b69} J. E. Handzlik and Manu, "Data-driven modeling predicts gene regulatory network dynamics during the differentiation of multipotential hematopoietic progenitors," PLOS Computational Biology, vol. 18, no. 1, 2022, doi: 10.1371/journal.pcbi.1009779.
+
+
+
+
+
+\end{thebibliography}
+\vspace{12pt}
+
+
+\end{document}
